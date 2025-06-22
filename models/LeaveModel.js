@@ -13,6 +13,10 @@ const leaveSchema = new mongoose.Schema({
     type: String,
     default: 'Pending', // Pending | Approved | Rejected
   },
+  reliever: {
+    type: String,
+    default: '',
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

@@ -1,59 +1,31 @@
 const express = require('express');
-const { applyLeave } = require('../controllers/leaveController');
-const Leave = require('../models/leaveModel');
-// const sendEmail = require('../utils/sendEmail');
-
 const router = express.Router();
+const Leave = require('../models/LeaveModel');
 
-// Apply for leave
-router.post('/apply', applyLeave);
-
-// Get leaves for a specific user
-router.get('/user/:id', async (req, res) => {
+// 1. Apply for leave
+router.post('/apply', async (req, res) => {
   try {
-    const leaves = await Leave.find({ userId: req.params.id });
-    res.json(leaves);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch leaves' });
+    const leave = new Leave(req.body);
+    await leave.save();
+    res.status(201).json({ message: 'Leave applied successfully' });
+  } catch (error) {
+    console.error('Leave application error:', error);
+    res.status(500).json({ error: 'Failed to apply leave' });
   }
 });
 
-// Get all leave requests (for admin)
+// 2. Get all leave requests (admin)
 router.get('/all', async (req, res) => {
   try {
-    const leaves = await Leave.find().populate('userId', 'name email role');
+    const leaves = await Leave.find().sort({ createdAt: -1 });
     res.json(leaves);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch all leaves' });
+  } catch (error) {
+    console.error('Error fetching leaves:', error);
+    res.status(500).json({ error: 'Failed to fetch leave requests' });
   }
 });
 
-// Update leave status and send email notification
-router.patch('/:id/status', async (req, res) => {
-  try {
-    const { status } = req.body;
-    const leave = await Leave.findById(req.params.id).populate('userId');
-
-    if (!leave) return res.status(404).json({ error: 'Leave not found' });
-
-    leave.status = status;
-    await leave.save();
-
-    // Send email
-    const to = leave.userId.email;
-    const subject = `Leave ${status}`;
-    const message = `Hello ${leave.fullName}, your leave from ${leave.fromDate.toDateString()} to ${leave.toDate.toDateString()} has been ${status}.`;
-
-    // await sendEmail(to, subject, message);
-
-    res.json(leave);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to update status' });
-  }
-});
-
-// Admin leave summary (total, approved, pending, rejected)
+// 3. Get leave summary for dashboard
 router.get('/summary', async (req, res) => {
   try {
     const [total, approved, pending, rejected] = await Promise.all([
@@ -63,13 +35,48 @@ router.get('/summary', async (req, res) => {
       Leave.countDocuments({ status: 'Rejected' }),
     ]);
 
-    // ✅ Log summary values to the backend console
-    console.log('Summary Counts', { total, approved, pending, rejected });
-
     res.json({ total, approved, pending, rejected });
   } catch (err) {
     console.error('Error getting summary:', err);
     res.status(500).json({ error: 'Failed to fetch summary' });
+  }
+});
+
+// 4. Get leave requests of a specific user
+router.get('/user/:id', async (req, res) => {
+  try {
+    const userLeaves = await Leave.find({ userId: req.params.id }).sort({ createdAt: -1 });
+    res.json(userLeaves);
+  } catch (err) {
+    console.error('Error getting user leaves:', err);
+    res.status(500).json({ error: 'Failed to fetch user leave history' });
+  }
+});
+
+// 5. Update status and reliever (combined)
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { status, reliever } = req.body;
+
+    console.log('PATCH /status body:', req.body);
+
+    const updatedLeave = await Leave.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...(status && { status }),      // set status if available
+        ...(reliever && { reliever }),  // set reliever if available
+      },
+      { new: true }
+    );
+
+    if (!updatedLeave) {
+      return res.status(404).json({ error: 'Leave not found' });
+    }
+
+    res.json({ message: 'Leave updated successfully', updatedLeave });
+  } catch (err) {
+    console.error('Error updating status/reliever:', err);
+    res.status(500).json({ error: 'Failed to update leave request' });
   }
 });
 
