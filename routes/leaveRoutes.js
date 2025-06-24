@@ -81,5 +81,26 @@ router.patch('/:id/status', async (req, res) => {
   }
 });
 
+// 6. Filter leave by date range for a specific user
+router.get('/user/:id/filter', async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    const userId = req.params.id;
+
+    const query = {
+      userId,
+      fromDate: { $gte: new Date(from) },
+      toDate: { $lte: new Date(to) }
+    };
+
+    const filteredLeaves = await Leave.find(query).sort({ createdAt: -1 });
+    res.json(filteredLeaves);
+  } catch (err) {
+    console.error('Error filtering leaves:', err);
+    res.status(500).json({ error: 'Failed to filter leave history' });
+  }
+});
+
+
 
 module.exports = router;
