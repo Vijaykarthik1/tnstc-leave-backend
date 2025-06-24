@@ -2,12 +2,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
-
-dotenv.config();
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+dotenv.config();
+app.use('/api/user', userRoutes);
+
+const uploadRoutes = require('./routes/uploadRoutes');
+app.use('/api/upload', uploadRoutes);
+
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
