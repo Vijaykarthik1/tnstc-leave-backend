@@ -101,6 +101,28 @@ router.get('/user/:id/filter', async (req, res) => {
   }
 });
 
+//7.
+// PATCH /api/leave/:id/cancel
+router.patch('/:id/cancel', async (req, res) => {
+  try {
+    const leave = await Leave.findById(req.params.id);
+
+    if (!leave) return res.status(404).json({ error: 'Leave not found' });
+
+    if (leave.status !== 'Pending') {
+      return res.status(400).json({ error: 'Only pending leaves can be cancelled' });
+    }
+
+    leave.status = 'Cancelled';
+    await leave.save();
+
+    res.json({ message: 'Leave cancelled successfully', leave });
+  } catch (err) {
+    console.error('Error cancelling leave:', err);
+    res.status(500).json({ error: 'Failed to cancel leave' });
+  }
+});
+
 
 
 module.exports = router;
