@@ -7,6 +7,10 @@ const { applyLeave, updateLeaveStatus } = require('../controllers/leaveControlle
 router.post('/apply', applyLeave);
 router.patch('/:id/status', updateLeaveStatus); // 👈 This is what handles rejectionReason
 
+const { getMonthlyStats } = require('../controllers/leaveController');
+
+router.get('/monthly-stats', getMonthlyStats);
+
 // 1. Apply for leave
 router.post('/apply', async (req, res) => {
   try {

@@ -37,7 +37,42 @@ const updateLeaveStatus = async (req, res) => {
 };
 
 
+/// Get monthly leave stats
+// GET /api/leave/monthly-stats
+const getMonthlyStats = async (req, res) => {
+  try {
+    const stats = await Leave.aggregate([
+      {
+        $group: {
+          _id: { $month: "$fromDate" },
+          total: { $sum: 1 },
+          approved: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Approved"] }, 1, 0]
+            }
+          },
+          rejected: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "Rejected"] }, 1, 0]
+            }
+          }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+    res.json(stats);
+  } catch (err) {
+    console.error("Error fetching monthly stats:", err);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+};
+
+
 module.exports = {
   applyLeave,
-  updateLeaveStatus
+  updateLeaveStatus,
+  getMonthlyStats, // 👈 make sure this is exported
 };
+
+
+
