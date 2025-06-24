@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Leave = require('../models/LeaveModel');
+const Leave = require('../models/LeaveModel'); // ✅ Matches filename exactly
+// <-- Import the Leave model
 
 // 1. Apply for leave
 router.post('/apply', async (req, res) => {
