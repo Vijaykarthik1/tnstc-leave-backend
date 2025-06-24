@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Leave = require('../models/LeaveModel'); // ✅ Matches filename exactly
 // <-- Import the Leave model
+const { applyLeave, updateLeaveStatus } = require('../controllers/leaveController');
+
+router.post('/apply', applyLeave);
+router.patch('/:id/status', updateLeaveStatus); // 👈 This is what handles rejectionReason
 
 // 1. Apply for leave
 router.post('/apply', async (req, res) => {
@@ -120,6 +124,32 @@ router.patch('/:id/cancel', async (req, res) => {
   } catch (err) {
     console.error('Error cancelling leave:', err);
     res.status(500).json({ error: 'Failed to cancel leave' });
+  }
+});
+
+// 8.
+router.patch('/:id/status', async (req, res) => {
+  try {
+    const { status, reliever, rejectionReason } = req.body;
+
+    const updatedLeave = await Leave.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...(status && { status }),
+        ...(reliever && { reliever }),
+        ...(rejectionReason && { rejectionReason }),
+      },
+      { new: true }
+    );
+
+    if (!updatedLeave) {
+      return res.status(404).json({ error: 'Leave not found' });
+    }
+
+    res.json({ message: 'Leave updated successfully', updatedLeave });
+  } catch (err) {
+    console.error('Error updating status:', err);
+    res.status(500).json({ error: 'Failed to update leave request' });
   }
 });
 

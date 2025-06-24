@@ -16,11 +16,16 @@ const leaveSchema = new mongoose.Schema({
   reliever: {
     type: String,
     default: '',
+  }, 
+  rejectionReason: {
+    type: String,
+    default: '',
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+
 }, { timestamps: true });
 
 module.exports = mongoose.model('Leave', leaveSchema);
